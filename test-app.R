@@ -17,7 +17,9 @@ taxa <- open_dataset("https://minio.carlboettiger.info/public-inat/taxonomy/taxa
 
 
 # publish richness at the aoi (bbox or poly)
-m = maplibre(center = c(-110.5, 37), zoom = 3)
+m = 
+  maplibre(center = c(-110.5, 37), zoom = 3) |> 
+  add_draw_control()
 
 
 ui <- fluidPage(
@@ -41,18 +43,20 @@ server <- function(input, output, session) {
         bbox =sf::st_bbox(unlist(input$map_bbox), crs = 4326)
         print(bbox)
 
+
+    })
+
+    observeEvent(input$get_features, {
+        drawn_features <- get_drawn_features(mapboxgl_proxy("map"))
+        
+        bbox = sf::st_bbox(unlist(input$map_bbox), crs = 4326)
+        zoom = input$map_zoom
+
         output$map <- renderMaplibre({
-            richness(inat, bbox)
+            richness(inat, drawn_features)
             richness_map(m)
      })
     })
-
-#    observeEvent(input$get_features, {
-#        drawn_features <- get_drawn_features(mapboxgl_proxy("map"))
-#        output$feature_output <- renderPrint({
-#            print(drawn_features)
-#        })
-#    })
 }
 
 shinyApp(ui, server)
