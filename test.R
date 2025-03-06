@@ -1,69 +1,103 @@
 ## Illustrate/test core app functionality without shiny
-
-library(tidyverse)
+library(dplyr)
 library(duckdbfs)
+library(ggplot2)
 library(mapgl)
-library(ellmer)
 library(glue)
+load_h3()
+load_spatial()
 
-repo <- "https://data.source.coop/cboettig/social-vulnerability"
-pmtiles <- glue("{repo}/svi2020_us_tract.pmtiles")
-parquet <- glue("{repo}/svi2020_us_tract.parquet")
-svi <- open_dataset(parquet, tblname = "svi") |> filter(RPL_THEMES > 0)
-
-schema <- read_file("schema.yml")
-system_prompt <- glue::glue(readr::read_file("system-prompt.md"),
-                            .open = "<", .close = ">")
+source("utils.R")
+source("inat-ranges.R")
 
 
+duckdbfs::duckdb_secrets()
+inat <- open_dataset("s3://public-inat/hex")
 
-# Or optionally test with cirrus
-chat <- ellmer::chat_vllm(
-  base_url = "https://llm.cirrus.carlboettiger.info/v1/",
-  model = "kosbu/Llama-3.3-70B-Instruct-AWQ",
-  api_key = Sys.getenv("CIRRUS_LLM_KEY"),
-  system_prompt = system_prompt,
-  api_args = list(temperature = 0)
-)
+aoi <- spData::us_states
 
-# or use the NRP model
-chat <- ellmer::chat_vllm(
-  base_url = "https://llm.nrp-nautilus.io/",
-  model = "llama3",
-  api_key = Sys.getenv("NRP_API_KEY"),
-  system_prompt = system_prompt,
-  api_args = list(temperature = 0)
-)
+taxa <- open_dataset("https://minio.carlboettiger.info/public-inat/taxonomy/taxa.csv", format = "csv", recursive = FALSE)
+
+# publish richness at the aoi (bbox or poly)
+richness(inat, aoi)
+richness_map()
 
 
-# Test a chat-based response
-chat$chat("Which columns describes racial components of social vulnerability?")
-## A query-based response
-stream <- chat$chat("Which counties in California have the highest average social vulnerability?")
-response <- jsonlite::fromJSON(stream)
 
-con <- duckdbfs::cached_connection()
-filtered_data <- DBI::dbGetQuery(con, response$query)
+## UGH can't deal with antimeridian
+# dropme <- antimeridian_hexes(3)
+# dropme <- antimeridian_hexes(4) |> rename(h4 = h3id)
+# inat |> anti_join(dropme) |> write_dataset("s3://public-inat/ranges.parquet")
+# inat <- open_dataset("s3://public-inat/ranges.parquet", recursive = FALSE)
 
-filter_column <- function(full_data, filtered_data, id_col) {
-  if (nrow(filtered_data) < 1) return(NULL)
-  values <- full_data |>
-    inner_join(filtered_data, copy = TRUE) |>
-    pull(id_col)
-  # maplibre syntax for the filter of PMTiles  
-  list("in", list("get", id_col), list("literal", values))
-}
+# mutate(h3 = h3_cell_to_parent(h4, 3L))
 
-maplibre(center = c(-102.9, 41.3), zoom = 3) |>
-    add_fill_layer(
-        id = "svi_layer",
-        source = list(type = "vector", url  = paste0("pmtiles://", pmtiles)),
-        source_layer = "SVI2000_US_tract",
-        filter = filter_column(full_data, filtered_data, "FIPS"),
-        fill_opacity = 0.5,
-        fill_color = interpolate(column = "RPL_THEMES",
-                                values = c(0, 1),
-                                stops = c("#e19292c0", "darkblue"),
-                                na_color = "lightgrey")
-    )
+
+
+m <- maplibre(center = c(-110.5, 34.8), zoom = 4) |> add_draw_control() 
+richness_map(m, "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j")
+
+
+
+
+
+
+
+
+
+
+
+library(htmlwidgets)
+htmlwidgets::saveWidget(m, "example.html")
+
+
+
+
+
+
+
+
+
+
+
+
+amphib = open_dataset("s3://public-inat/polygon/Amphibia.parquet", recursive = FALSE)
+
+gdf <- amphib |> 
+filter(name == "Ambystoma californiense") |>
+ to_sf(crs=4326)
+
+maplibre(center = c(-122.5, 37.8), zoom = 4) |>
+      add_source(id = "gdf", gdf) |>
+      add_layer("gdf-layer",
+                type = "fill",
+                source = "gdf",
+                paint = list(
+                  "fill-color" =  "darkgreen",
+                  "fill-opacity" = .9
+                )
+        )
+      
+
+
+
+
+# Access SVI
+#svi = open_dataset("https://minio.carlboettiger.info/public-social-vulnerability/2022/SVI2022_US_tract.parquet")
+#tracts = open_dataset("https://minio.carlboettiger.info/public-social-vulnerability/2022-tracts-h3-z5.parquet") # Access CalEnviroScreen
+# ces = open_dataset("https://minio.carlboettiger.info/public-calenviroscreen/ces_2021.parquet", format="parquet")
+
+# Filter GBIF to our area-of-interest (h-index) and species of interest
+
+ca <- tracts |>
+  filter(STATE == "California") |>
+  mutate(h4 = h3_cell_to_parent(h5, 4L)) |>
+  mutate(h4 = tolower(as.character(h4)))
+
+out <- ca |>
+ inner_join(inat, by = "h4") |>
+ count(STATE, COUNTY, FIPS, h5)
+
+
+#  mutate(height = n / max(n)) |>
 
