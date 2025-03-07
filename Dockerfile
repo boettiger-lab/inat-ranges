@@ -14,7 +14,7 @@ RUN install2.r --error \
     tidyverse \
     colourpicker
 
-RUN installGithub.r cboettig/mapgl tidyverse/ellmer
+RUN installGithub.r cboettig/mapgl tidyverse/ellmer cboettig/duckdbfs
 
 COPY . .
 
