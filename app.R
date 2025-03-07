@@ -42,9 +42,13 @@ server <- function(input, output, session) {
     output$map <- renderMaplibre({
 
         # Hacky -- we sidecar the metadata here
-        meta <- jsonlite::read_json(cache)
-        m <- maplibre(center = meta$center, zoom = meta$zoom) |>  add_draw_control()
+        if( file.exists(cache) ) {
+            meta <- jsonlite::read_json(cache)
+        } else {
+            meta <- list(center = c(-110, 37), zoom=4)
+        }
 
+        m <- maplibre(center = meta$center, zoom = meta$zoom) |>  add_draw_control()
         richness_map(m)
      })
 
@@ -78,7 +82,7 @@ server <- function(input, output, session) {
      #   maplibre_proxy("map") |> 
      #     set_view(input$map_center, input$map_zoom) |>
      #     set_h3j_source("h3j_layer", "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j")
-     
+
      #  set_filter("h3j_layer", filter = list(">=", "n", 300))
 
     })
