@@ -14,13 +14,21 @@ taxa <- open_dataset("https://minio.carlboettiger.info/public-inat/taxonomy/taxa
            recursive = FALSE) |> rename(taxon_id = id)
 cache <- tempfile(fileext = ".json")
 
-# User interface
+
+
+###### User interface ######
 ui <- page_sidebar(
   title = "iNaturalist Rangemaps",
+  markdown("Visualize species richness from [iNaturalist Range map datasets](https://www.inaturalist.org/pages/range_maps).
+  Pan & zoom the map over the desired area and hit 'map richness', or draw the desired area with the draw tool.
+  Filter by specific taxonomic ranks or view all 100,293 mapped species. 
+  Note that larger areas will be slower to compute. (Area selections that overlap the antimerdian may create visual artefacts).
+  "),
   shinybusy::add_busy_spinner(),
   sidebar = sidebar(
     card(
-    input_switch("filter", "filter taxa", value = TRUE),
+    markdown("Filter by taxonomic group or toggle off to see all species."),
+    input_switch("filter", "filter taxa:", value = TRUE),
     varSelectInput("rank", NULL, taxa, selected = "class"),
     textInput("taxon", NULL, "Aves")
     ),
@@ -31,7 +39,7 @@ ui <- page_sidebar(
   )
 )
 
-# Server
+###### Server ######
 server <- function(input, output, session) {
 # observeEvent(input$map_bbox, { }) # We can react to any zoom/pan on the map
 
