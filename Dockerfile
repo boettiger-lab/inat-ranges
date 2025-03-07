@@ -11,7 +11,7 @@ RUN install2.r --error \
     gt \
     markdown \
     shiny \
-    shinychat \
+    shinybusy \
     tidyverse \
     colourpicker
 

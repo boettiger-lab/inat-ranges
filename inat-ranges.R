@@ -8,7 +8,7 @@ richness <- function(inat, aoi) {
 
   h3_aoi  <- get_h3_aoi(aoi, precision = 4) |> select(h3id)
 
-  bench::bench_time({
+  clock <- bench::bench_time({
   inat |> 
     rename(h3id = h4) |>
     inner_join(h3_aoi, by = "h3id") |>
@@ -19,6 +19,8 @@ richness <- function(inat, aoi) {
     duckdbfs::to_h3j("s3://public-data/inat-tmp-ranges.h3j")
   #  write_dataset("s3://public-data/inat-tmp-ranges.parquet")
   })
+
+  return(clock)
 }
 
 richness_map <- function(
