@@ -11,7 +11,7 @@ richness <- function(inat, aoi) {
   bench::bench_time({
   inat |> 
     rename(h3id = h4) |>
-    inner_join(h3_aoi) |>
+    inner_join(h3_aoi, by = "h3id") |>
     distinct(taxon_id, h3id) |> 
     group_by(h3id) |>
     summarise(n = n()) |>
