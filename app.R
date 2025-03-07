@@ -17,7 +17,7 @@ cache <- tempfile(fileext = ".json")
 # User interface
 ui <- page_sidebar(
   title = "iNaturalist Rangemaps",
-  # shinybusy::add_busy_spinner(),
+  shinybusy::add_busy_spinner(),
   sidebar = sidebar(
     card(
     input_switch("filter", "filter taxa", value = TRUE),
