@@ -12,6 +12,8 @@ inat <- open_dataset("s3://public-inat/hex")
 taxa <- open_dataset("https://minio.carlboettiger.info/public-inat/taxonomy/taxa.parquet",
                      recursive = FALSE) |> rename(taxon_id = id)
 
+cache <- tempfile(fileext = ".json")
+
 # intialize map
 #m <- maplibre(center = c(-110, 37), zoom = 3) |>  add_draw_control()
 
@@ -40,7 +42,7 @@ server <- function(input, output, session) {
     output$map <- renderMaplibre({
 
         # Hacky -- we sidecar the metadata here
-        meta <- jsonlite::read_json("cache.json")
+        meta <- jsonlite::read_json(cache)
         m <- maplibre(center = meta$center, zoom = meta$zoom) |>  add_draw_control()
 
         richness_map(m)
@@ -69,7 +71,7 @@ server <- function(input, output, session) {
         
         center <- st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi))))
         zoom <- input$map_zoom
-        jsonlite::write_json(list(center = c(center), zoom = zoom), "cache.json")
+        jsonlite::write_json(list(center = c(center), zoom = zoom), cache)
 
         session$reload()
 
