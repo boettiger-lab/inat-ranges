@@ -4,6 +4,7 @@ library(bslib)
 source("utils.R")
 source("inat-ranges.R")
 
+print(Sys.getenv("FAKE_SECRET"))
 
 # intialize data
 load_h3()
