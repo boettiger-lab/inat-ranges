@@ -22,8 +22,9 @@ richness <- function(inat, aoi) {
 }
 
 richness_map <- function(
-  m = maplibre(center = c(-110.5, 37), zoom = 3),
-  url = "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j"
+  m = maplibre(),
+  url = "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j",
+  aoi = NULL
   ) {
   
   m <- m |>
@@ -46,5 +47,10 @@ richness_map <- function(
       ),
       fill_extrusion_opacity = 0.7
     )
-  m
+  if(!is.null(aoi)) {
+    # center <- st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi))))
+   # m <- m |> set_view(center = center, zoom = 3)
+  }
+
+  return(m)
 }

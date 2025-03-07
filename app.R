@@ -14,7 +14,7 @@ taxa <- open_dataset("https://minio.carlboettiger.info/public-inat/taxonomy/taxa
                      recursive = FALSE) |> rename(taxon_id = id)
 
 # intialize map
-m <- maplibre(center = c(-110, 37), zoom = 3) |>  add_draw_control()
+#m <- maplibre(center = c(-110, 37), zoom = 3) |>  add_draw_control()
 
 # User interface
 ui <- page_sidebar(
@@ -39,7 +39,12 @@ server <- function(input, output, session) {
 # observeEvent(input$map_bbox, { }) # We can react to any zoom/pan on the map
 
     output$map <- renderMaplibre({
-        richness_map(m) # |> fly_to(input$map_center, input$map_zoom)
+
+        # Hacky -- we sidecar the metadata here
+        meta <- jsonlite::read_json("cache.json")
+        m <- maplibre(center = meta$center, zoom = meta$zoom) |>  add_draw_control()
+
+        richness_map(m)
      })
 
     observeEvent(input$get_features, {
@@ -62,8 +67,12 @@ server <- function(input, output, session) {
         }
 
         richness(inat, aoi)
+        
+        center <- st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi))))
+        zoom <- input$map_zoom
+        jsonlite::write_json(list(center = c(center), zoom = zoom), "cache.json")
 
-        #session$reload()
+        session$reload()
 
      #   maplibre_proxy("map") |> 
      #     set_view(input$map_center, input$map_zoom) |>
@@ -71,12 +80,9 @@ server <- function(input, output, session) {
          
           #  set_filter("h3j_layer", filter = list(">=", "n", 300))
 
-          m = maplibre(center = input$map_center, zoom = input$map_zoom)
     })
 
-    output$map <- renderMaplibre({
-        richness_map(m) # |> fly_to(input$map_center, input$map_zoom)
-     })
+
 
 }
 
