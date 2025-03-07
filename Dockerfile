@@ -3,6 +3,7 @@ FROM rocker/geospatial:latest
 WORKDIR /code
 
 RUN install2.r --error \
+    bench \
     bsicons \
     bslib \
     duckdbfs \
