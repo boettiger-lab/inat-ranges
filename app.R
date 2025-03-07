@@ -77,9 +77,9 @@ server <- function(input, output, session) {
 
      #   maplibre_proxy("map") |> 
      #     set_view(input$map_center, input$map_zoom) |>
-     #     set_h3j_source("h3j_layer", "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j") 
-         
-          #  set_filter("h3j_layer", filter = list(">=", "n", 300))
+     #     set_h3j_source("h3j_layer", "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j")
+     
+     #  set_filter("h3j_layer", filter = list(">=", "n", 300))
 
     })
 
