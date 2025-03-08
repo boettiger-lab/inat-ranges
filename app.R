@@ -49,12 +49,15 @@ server <- function(input, output, session) {
     if(file.exists(cache)) {
       meta <- jsonlite::read_json(cache)
     } else {
-      meta <- list(center = c(-110, 37), zoom=4)
+      meta <- list(center = c(-110, 37),
+                   zoom = 4,
+                   url = paste0("https://minio.carlboettiger.info/",
+                                "public-data/inat-tmp-ranges.h3j"))
     }
 
     m <- maplibre(center = meta$center, zoom = meta$zoom) |>
       add_draw_control()
-    richness_map(m)
+    richness_map(m, url = meta$url)
 
   })
 
@@ -70,19 +73,18 @@ server <- function(input, output, session) {
       aoi <- spData::us_states
     }
 
+    rank <- taxon <- NULL
     if (input$filter) {
-      inat <- taxa |> 
-      filter(.data[[input$rank]] == input$taxon) |> 
-      select(taxon_id) |>
-      inner_join(inat, by = "taxon_id")
+      rank <- input$rank
+      taxon <- input$taxon
     }
 
     message("Computing richness...")
-    clock <- richness(inat, aoi)
+    url <- richness(inat, aoi, rank, taxon)
 
     center <- st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi))))
     zoom <- input$map_zoom
-    jsonlite::write_json(list(center = c(center), zoom = zoom), cache)
+    jsonlite::write_json(list(center = c(center), zoom = zoom, url = url), cache)
 
     session$reload()
 

@@ -15,12 +15,20 @@ duckdbfs::duckdb_secrets()
 inat <- open_dataset("s3://public-inat/hex")
 
 aoi <- spData::us_states
-
-taxa <- open_dataset("https://minio.carlboettiger.info/public-inat/taxonomy/taxa.csv", format = "csv", recursive = FALSE)
+aoi <- spData::world
 
 # publish richness at the aoi (bbox or poly)
 richness(inat, aoi)
-richness_map()
+m <- richness_map()
+
+library(htmlwidgets)
+htmlwidgets::saveWidget(m, "total-richness.html")
+
+
+# publish richness at the aoi (bbox or poly)
+richness(inat, aoi, rank = "class", taxon = "Aves")
+m <- richness_map()
+htmlwidgets::saveWidget(m, "aves-richness.html")
 
 
 

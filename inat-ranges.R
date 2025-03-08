@@ -4,7 +4,22 @@ library(mapgl)
 
 # Also requires get_h3_aoi() from utils.R
 
-richness <- function(inat, aoi) {
+richness <- function(inat, aoi, rank = NULL, taxon = NULL) {
+
+  taxa <- open_dataset("https://minio.carlboettiger.info/public-inat/taxonomy/taxa.csv", format = "csv", recursive = FALSE)
+
+  hash <- digest::digest(list(aoi, rank, taxon))
+  s3 <- paste0("s3://public-data/cache/inat/", hash, ".h3j")
+
+  # check if hash exists
+
+  # filter
+  if (!is.null(rank) && !is.null(taxon)) {
+    inat <- taxa |> 
+      filter(.data[[rank]] == taxon) |> 
+      select(taxon_id) |>
+      inner_join(inat, by = "taxon_id")
+  }
 
   h3_aoi  <- get_h3_aoi(aoi, precision = 4) |> select(h3id)
 
@@ -16,17 +31,17 @@ richness <- function(inat, aoi) {
     group_by(h3id) |>
     summarise(n = n()) |>
     mutate(height = n / max(n)) |> 
-    duckdbfs::to_h3j("s3://public-data/inat-tmp-ranges.h3j")
+    duckdbfs::to_h3j(s3)
   #  write_dataset("s3://public-data/inat-tmp-ranges.parquet")
   })
 
-  return(clock)
+  url <- gsub("s3://", "https://minio.carlboettiger.info/", s3)
+  return(url)
 }
 
 richness_map <- function(
   m = maplibre(),
-  url = "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j",
-  aoi = NULL
+  url = "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j"
   ) {
   
   m <- m |>
@@ -49,10 +64,6 @@ richness_map <- function(
       ),
       fill_extrusion_opacity = 0.7
     )
-  if(!is.null(aoi)) {
-    # center <- st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi))))
-   # m <- m |> set_view(center = center, zoom = 3)
-  }
 
   return(m)
 }
