@@ -6,6 +6,7 @@ library(duckdbfs)
 library(ggplot2)
 library(mapgl)
 library(glue)
+library(jsonlite)
 load_h3()
 load_spatial()
 
@@ -17,12 +18,14 @@ duckdbfs::duckdb_secrets()
 inat <- open_dataset("s3://public-inat/hex")
 
 aoi <- spData::us_states
-aoi <- spData::world
+#aoi <- spData::world
 
 # publish richness at the aoi (bbox or poly)
-url <- richness(inat, aoi)
-m <- maplibre() |> add_draw_control()
-m <- richness_map(url = url)
+meta <- richness(inat, aoi)
+
+toJSON(meta, auto_unbox = TRUE) |> fromJSON(meta)
+
+m <- richness_map(meta)
 m
 library(htmlwidgets)
 htmlwidgets::saveWidget(m, "total-richness.html")
@@ -34,8 +37,8 @@ m <- richness_map(url = url)
 htmlwidgets::saveWidget(m, "aves-richness.html")
 
 # publish richness at the aoi (bbox or poly)
-richness(inat, aoi, rank = "class", taxon = "Mammalia")
-m <- richness_map()
+url <- richness(inat, aoi, rank = "class", taxon = "Mammalia")
+m <- richness_map(url = url)
 htmlwidgets::saveWidget(m, "mammals-richness.html")
 
 
@@ -116,3 +119,24 @@ out <- ca |>
 
 #  mutate(height = n / max(n)) |>
 
+url = "https://minio.carlboettiger.info/public-data/cache/inat/cec4b3087f0b6c41ecc384da2521f97c.h3j"
+ maplibre() |>
+    add_draw_control() |>
+    add_h3j_source("h3j_source",
+                  url = url
+    ) |>
+    add_fill_extrusion_layer(
+      id = "h3j_layer",
+      source = "h3j_source",
+      tooltip = "n",
+      fill_extrusion_color = viridis_pal("height"),
+      fill_extrusion_height = list(
+        "interpolate",
+        list("linear"),
+        list("zoom"),
+        0,
+        0, 1,
+        list("*", 100000, list("get", "height"))
+      ),
+      fill_extrusion_opacity = 0.7
+    )

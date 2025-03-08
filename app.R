@@ -48,16 +48,17 @@ server <- function(input, output, session) {
     # Hacky -- we sidecar the metadata here
     if(file.exists(cache)) {
       meta <- jsonlite::read_json(cache)
+      print(meta$url)
     } else {
-      meta <- list(center = c(-110, 37),
+      meta <- list(X = -110,
+                   Y = 37,
                    zoom = 4,
                    url = paste0("https://minio.carlboettiger.info/",
                                 "public-data/inat-tmp-ranges.h3j"))
     }
-
-    m <- maplibre(center = meta$center, zoom = meta$zoom) |>
-      add_draw_control()
-    richness_map(m, url = meta$url)
+   
+    m <- richness_map(meta)
+    m
 
   })
 
@@ -80,12 +81,9 @@ server <- function(input, output, session) {
     }
 
     message("Computing richness...")
-    url <- richness(inat, aoi, rank, taxon)
-
-    center <- st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi))))
-    zoom <- input$map_zoom
-    jsonlite::write_json(list(center = c(center), zoom = zoom, url = url), cache)
-
+    meta <- richness(inat, aoi, rank, taxon, zoom = input$map_zoom)
+    jsonlite::write_json(meta, cache, auto_unbox = TRUE)
+    message(paste("rendering", meta$url))
     session$reload()
 
   # UGH not sure why this fails, we manually reload instead!

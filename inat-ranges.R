@@ -4,7 +4,7 @@ library(mapgl)
 
 # Also requires get_h3_aoi() from utils.R
 
-richness <- function(inat, aoi, rank = NULL, taxon = NULL) {
+richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
 
   hash <- digest::digest(list(aoi, rank, taxon))
   s3 <- paste0("s3://public-data/cache/inat/", hash, ".h3j")
@@ -36,18 +36,25 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL) {
   #  write_dataset("s3://public-data/inat-tmp-ranges.parquet")
   })
 
+
+  center <- c(st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi)))))
   url <- gsub("s3://", "https://minio.carlboettiger.info/", s3)
-  return(url)
+
+  meta <- list(X = center[1], 
+               Y = center[2],
+               zoom = zoom, 
+               url = url, 
+               time = clock[[2]])
+  return(meta)
 }
 
-richness_map <- function(
-  m = maplibre(),
-  url = "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j"
-  ) {
-  
-  m <- m |>
+richness_map <- function(meta) {
+
+  m <- 
+    maplibre(center = c(meta$X, meta$Y), zoom = meta$zoom) |>
+    add_draw_control() |>
     add_h3j_source("h3j_source",
-                  url = url
+                  url = meta$url
     ) |>
     add_fill_extrusion_layer(
       id = "h3j_layer",
@@ -59,8 +66,7 @@ richness_map <- function(
         list("linear"),
         list("zoom"),
         0,
-        0,
-        1,
+        0, 1,
         list("*", 100000, list("get", "height"))
       ),
       fill_extrusion_opacity = 0.7
