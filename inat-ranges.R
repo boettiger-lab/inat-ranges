@@ -6,8 +6,6 @@ library(mapgl)
 
 richness <- function(inat, aoi, rank = NULL, taxon = NULL) {
 
-  taxa <- open_dataset("https://minio.carlboettiger.info/public-inat/taxonomy/taxa.csv", format = "csv", recursive = FALSE)
-
   hash <- digest::digest(list(aoi, rank, taxon))
   s3 <- paste0("s3://public-data/cache/inat/", hash, ".h3j")
 
@@ -15,7 +13,10 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL) {
 
   # filter
   if (!is.null(rank) && !is.null(taxon)) {
+    taxa <- open_dataset("https://minio.carlboettiger.info/public-inat/taxonomy/taxa.parquet",
+           recursive = FALSE)
     inat <- taxa |> 
+      rename(taxon_id = id) |>
       filter(.data[[rank]] == taxon) |> 
       select(taxon_id) |>
       inner_join(inat, by = "taxon_id")

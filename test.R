@@ -1,3 +1,5 @@
+
+
 ## Illustrate/test core app functionality without shiny
 library(dplyr)
 library(duckdbfs)
@@ -18,18 +20,23 @@ aoi <- spData::us_states
 aoi <- spData::world
 
 # publish richness at the aoi (bbox or poly)
-richness(inat, aoi)
-m <- richness_map()
-
+url <- richness(inat, aoi)
+m <- maplibre() |> add_draw_control()
+m <- richness_map(url = url)
+m
 library(htmlwidgets)
 htmlwidgets::saveWidget(m, "total-richness.html")
 
 
 # publish richness at the aoi (bbox or poly)
-richness(inat, aoi, rank = "class", taxon = "Aves")
-m <- richness_map()
+url <- richness(inat, aoi, rank = "class", taxon = "Aves")
+m <- richness_map(url = url)
 htmlwidgets::saveWidget(m, "aves-richness.html")
 
+# publish richness at the aoi (bbox or poly)
+richness(inat, aoi, rank = "class", taxon = "Mammalia")
+m <- richness_map()
+htmlwidgets::saveWidget(m, "mammals-richness.html")
 
 
 ## UGH can't deal with antimeridian
