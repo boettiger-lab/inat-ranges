@@ -88,12 +88,7 @@ server <- function(input, output, session) {
     message(paste("rendering", meta$url))
     session$reload()
 
-  # UGH not sure why this fails, we manually reload instead!
-  #maplibre_proxy("map") |> 
-  #   set_view(input$map_center, input$map_zoom) |>
-  #   set_h3j_source("h3j_layer", "https://minio.carlboettiger.info/public-data/tmp6.h3j")
 
-  #  set_filter("h3j_layer", filter = list(">=", "n", 300))
 
   })
 
