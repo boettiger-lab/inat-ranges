@@ -18,13 +18,10 @@ duckdbfs::duckdb_secrets()
 inat <- open_dataset("s3://public-inat/hex")
 
 aoi <- spData::us_states
-#aoi <- spData::world
+aoi <- spData::world
 
 # publish richness at the aoi (bbox or poly)
 meta <- richness(inat, aoi)
-
-toJSON(meta, auto_unbox = TRUE) |> fromJSON(meta)
-
 m <- richness_map(meta)
 m
 library(htmlwidgets)
@@ -32,13 +29,13 @@ htmlwidgets::saveWidget(m, "total-richness.html")
 
 
 # publish richness at the aoi (bbox or poly)
-url <- richness(inat, aoi, rank = "class", taxon = "Aves")
-m <- richness_map(url = url)
+meta <- richness(inat, aoi, rank = "class", taxon = "Aves")
+m <- richness_map(meta)
 htmlwidgets::saveWidget(m, "aves-richness.html")
 
 # publish richness at the aoi (bbox or poly)
-url <- richness(inat, aoi, rank = "class", taxon = "Mammalia")
-m <- richness_map(url = url)
+meta <- richness(inat, aoi, rank = "class", taxon = "Mammalia")
+m <- richness_map(meta)
 htmlwidgets::saveWidget(m, "mammals-richness.html")
 
 
