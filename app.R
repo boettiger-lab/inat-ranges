@@ -4,14 +4,14 @@ library(shinybusy)
 
 source("utils.R")
 source("inat-ranges.R")
-endpoint <- Sys.getenv("AWS_S3_ENDPOINT")
+endpoint <- Sys.getenv("AWS_PUBLIC_ENDPOINT", Sys.getenv("AWS_S3_ENDPOINT"))
 
 # intialize data
 load_h3()
 load_spatial()
 duckdbfs::duckdb_secrets()
 inat <- open_dataset("s3://public-inat/hex")
-taxa <- open_dataset(glue("https://{endpoint}/public-inat/taxonomy/taxa.parquet"),
+taxa <- open_dataset(glue("s3://public-inat/taxonomy/taxa.parquet"),
                      recursive = FALSE) |> rename(taxon_id = id)
 cache <- tempfile(fileext = ".json")
 
@@ -55,7 +55,7 @@ server <- function(input, output, session) {
                    Y = 37,
                    zoom = 4,
                    url = paste0("https://",
-                                endpoint,
+                                public_endpoint,
                                 "/public-data/inat-tmp-ranges.h3j"))
     }
    

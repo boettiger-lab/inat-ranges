@@ -16,7 +16,7 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
 
   # filter
   if (!is.null(rank) && !is.null(taxon)) {
-    taxa <- open_dataset(glue("https://{endpoint}/public-inat/taxonomy/taxa.parquet"),
+    taxa <- open_dataset(glue("s3://public-inat/taxonomy/taxa.parquet"),
            recursive = FALSE)
     inat <- taxa |> 
       rename(taxon_id = id) |>
@@ -41,7 +41,7 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
 
 
   center <- c(st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi)))))
-  url <- gsub("s3://", glue("https://{endpoint}/"), s3)
+  url <- gsub("s3://", glue("https://{public_endpoint}/"), s3)
 
   meta <- list(X = center[1], 
                Y = center[2],
