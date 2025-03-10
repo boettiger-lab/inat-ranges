@@ -55,7 +55,7 @@ server <- function(input, output, session) {
                    Y = 37,
                    zoom = 4,
                    url = paste0("https://",
-                                server,
+                                endpoint,
                                 "/public-data/inat-tmp-ranges.h3j"))
     }
    
