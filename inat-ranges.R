@@ -3,12 +3,12 @@ library(duckdbfs)
 library(mapgl)
 library(glue)
 
-server <- Sys.getenv("AWS_S3_ENDPOINT")
 
 # Also requires get_h3_aoi() from utils.R
 
 richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
 
+  endpoint <- Sys.getenv("AWS_S3_ENDPOINT")
   hash <- digest::digest(list(aoi, rank, taxon))
   s3 <- paste0("s3://public-data/cache/inat/", hash, ".h3j")
 
@@ -16,7 +16,7 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
 
   # filter
   if (!is.null(rank) && !is.null(taxon)) {
-    taxa <- open_dataset(glue("https://{server}/public-inat/taxonomy/taxa.parquet"),
+    taxa <- open_dataset(glue("https://{endpoint}/public-inat/taxonomy/taxa.parquet"),
            recursive = FALSE)
     inat <- taxa |> 
       rename(taxon_id = id) |>
@@ -41,7 +41,7 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
 
 
   center <- c(st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi)))))
-  url <- gsub("s3://", glue("https://{server}/"), s3)
+  url <- gsub("s3://", glue("https://{endpoint}/"), s3)
 
   meta <- list(X = center[1], 
                Y = center[2],
