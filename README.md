@@ -6,6 +6,7 @@ colorTo: yellow
 sdk: docker
 pinned: false
 license: bsd-2-clause
+port: 8080
 ---
 
 # Demo Shiny App with Maplibre + open LLM interface
