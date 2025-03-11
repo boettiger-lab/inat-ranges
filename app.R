@@ -4,7 +4,7 @@ library(shinybusy)
 
 source("utils.R")
 source("inat-ranges.R")
-endpoint <- Sys.getenv("AWS_PUBLIC_ENDPOINT", Sys.getenv("AWS_S3_ENDPOINT"))
+public_endpoint <- Sys.getenv("AWS_PUBLIC_ENDPOINT", Sys.getenv("AWS_S3_ENDPOINT"))
 
 # intialize data
 load_h3()
