@@ -8,7 +8,7 @@ library(glue)
 
 richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
 
-  endpoint <- Sys.getenv("AWS_S3_ENDPOINT")
+  public_endpoint <- Sys.getenv("AWS_PUBLIC_ENDPOINT", Sys.getenv("AWS_S3_ENDPOINT"))
   hash <- digest::digest(list(aoi, rank, taxon))
   s3 <- paste0("s3://public-data/cache/inat/", hash, ".h3j")
 
