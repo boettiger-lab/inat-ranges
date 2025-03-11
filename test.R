@@ -1,4 +1,38 @@
 
+source("utils.R")
+source("inat-ranges.R")
+
+url <- "https://s3-west.nrp-nautilus.io/public-data/cache/inat/f0108ef86feababffeab3d2be6f09373.h3j"
+#url <-  "https://minio.carlboettiger.info/public-data/cache/inat/4fd3323845ee860b39609783566b2212.h3j"
+
+url <- "https://minio.carlboettiger.info/public-data/cache/inat/f0108ef86feababffeab3d2be6f09373.h3j"
+
+#x <- jsonlite::read_json(url)
+
+ m = maplibre(center = c(-110,37), zoom=3) |>
+    add_draw_control() |>
+    add_h3j_source("h3j_source",
+                  url = url
+    ) |>
+    add_fill_extrusion_layer(
+      id = "h3j_layer",
+      source = "h3j_source",
+      tooltip = "n",
+      fill_extrusion_color = viridis_pal("height"),
+      fill_extrusion_height = list(
+        "interpolate",
+        list("linear"),
+        list("zoom"),
+        0,
+        0, 1,
+        list("*", 100000, list("get", "height"))
+      ),
+      fill_extrusion_opacity = 0.7
+    )
+
+
+htmlwidgets::saveWidget(m, "test2.html")
+
 
 ## Illustrate/test core app functionality without shiny
 library(dplyr)
