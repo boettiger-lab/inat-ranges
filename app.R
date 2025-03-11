@@ -16,6 +16,9 @@ taxa <- open_dataset(glue("s3://public-inat/taxonomy/taxa.parquet"),
 cache <- tempfile(fileext = ".json")
 
 
+# I/O limited, we can have many more processes than CPU threads
+con <- duckdbfs::cached_connection()
+DBI::dbExecute(con, "SET threads = 128;")
 
 ###### User interface ######
 ui <- page_sidebar(
