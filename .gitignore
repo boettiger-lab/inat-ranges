@@ -50,3 +50,7 @@ rsconnect/
 
 .tmp/*
 *.html
+
+*secret*
+
+

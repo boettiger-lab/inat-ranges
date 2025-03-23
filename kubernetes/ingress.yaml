@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+  name: inat-ingress
+spec:
+  rules:
+  - host: inat-ranges.nrp-nautilus.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: inat-svc
+            port:
+              number: 8080
+  tls:
+  - hosts:
+    - inat-ranges.nrp-nautilus.io
