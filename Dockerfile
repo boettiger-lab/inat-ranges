@@ -15,7 +15,7 @@ RUN install2.r --error \
     tidyverse \
     colourpicker
 
-RUN installGithub.r cboettig/mapgl tidyverse/ellmer cboettig/duckdbfs
+RUN installGithub.r cboettig/mapgl tidyverse/ellmer cboettig/duckdbfs boettiger-lab/overture
 
 COPY . .
 
