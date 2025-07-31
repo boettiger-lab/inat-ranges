@@ -13,12 +13,12 @@ spec:
     - name: AWS_ACCESS_KEY_ID
       valueFrom:
         secretKeyRef:
-          name: aws-access-key-id
+          name: aws
           key: AWS_ACCESS_KEY_ID  
     - name: AWS_SECRET_ACCESS_KEY
       valueFrom:
         secretKeyRef:
-          name: aws-secret-access-key
+          name: aws
           key: AWS_SECRET_ACCESS_KEY
     - name: AWS_S3_ENDPOINT
       value: "rook-ceph-rgw-nautiluss3.rook"
@@ -26,6 +26,8 @@ spec:
       value: "s3-west.nrp-nautilus.io"
     - name: AWS_HTTPS
       value: "false"
+    - name: AWS_VIRTUAL_HOSTING
+      value: "FALSE"
     resources:
       requests:
         cpu: 4
