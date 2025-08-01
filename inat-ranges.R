@@ -3,6 +3,7 @@ library(duckdbfs)
 library(mapgl)
 library(glue)
 
+fs::dir_create(overture:::overture_cache())
 
 public_endpoint <- Sys.getenv(
   "AWS_PUBLIC_ENDPOINT",
