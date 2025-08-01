@@ -13,15 +13,16 @@ library(overture)
 source("utils.R")
 source("inat-ranges.R")
 
+duckdb_config(threads = 24) # I/O limited so overclock threads
 
 ui <- page_sidebar(
   shinybusy::add_busy_spinner(),
 
   title = "iNaturalist Species Ranges",
   sidebar = sidebar(
-    textInput("location", "Location", "California"),
-    varSelectInput("rank", NULL, taxa, selected = "scientificName"),
-    textInput("taxon", NULL, "Canis lupus"),
+    textInput("location", "Location", "United States"),
+    varSelectInput("rank", NULL, taxa, selected = "class"),
+    textInput("taxon", NULL, "Aves"),
     actionButton("button", "Go")
   ),
   card(
@@ -32,24 +33,16 @@ ui <- page_sidebar(
 
 server <- function(input, output, session) {
   output$map <- renderMaplibre({
-    if (file.exists(cache)) {
-      meta <- jsonlite::read_json(cache)
-      print(meta$url)
-    } else {
-      aoi <- get_division(input$location)
-      meta <- richness(inat, aoi, rank = input$rank, taxon = input$taxon)
-    }
-    m <- richness_map(meta)
+    aoi <- get_division(input$location)
+    url <- richness(inat, aoi, rank = input$rank, taxon = input$taxon)
+    m <- richness_map(url, aoi)
     m
   })
 
   observeEvent(input$button, {
     print(input$location)
     aoi <- get_division(input$location)
-    meta <- richness(inat, aoi, rank = input$rank, taxon = input$taxon)
-
-    jsonlite::write_json(meta, cache, auto_unbox = TRUE)
-    message(paste("rendering", meta$url))
+    richness(inat, aoi, rank = input$rank, taxon = input$taxon)
 
     session$reload()
   })

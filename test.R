@@ -1,4 +1,3 @@
-
 source("utils.R")
 source("inat-ranges.R")
 
@@ -9,26 +8,25 @@ url <- "https://minio.carlboettiger.info/public-data/cache/inat/f0108ef86feababf
 
 #x <- jsonlite::read_json(url)
 
- m = maplibre(center = c(-110,37), zoom=3) |>
-    add_draw_control() |>
-    add_h3j_source("h3j_source",
-                  url = url
-    ) |>
-    add_fill_extrusion_layer(
-      id = "h3j_layer",
-      source = "h3j_source",
-      tooltip = "n",
-      fill_extrusion_color = viridis_pal("height"),
-      fill_extrusion_height = list(
-        "interpolate",
-        list("linear"),
-        list("zoom"),
-        0,
-        0, 1,
-        list("*", 100000, list("get", "height"))
-      ),
-      fill_extrusion_opacity = 0.7
-    )
+m = maplibre(center = c(-110, 37), zoom = 3) |>
+  add_draw_control() |>
+  add_h3j_source("h3j_source", url = url) |>
+  add_fill_extrusion_layer(
+    id = "h3j_layer",
+    source = "h3j_source",
+    tooltip = "n",
+    fill_extrusion_color = viridis_pal("height"),
+    fill_extrusion_height = list(
+      "interpolate",
+      list("linear"),
+      list("zoom"),
+      0,
+      0,
+      1,
+      list("*", 100000, list("get", "height"))
+    ),
+    fill_extrusion_opacity = 0.7
+  )
 
 
 htmlwidgets::saveWidget(m, "test2.html")
@@ -81,54 +79,44 @@ htmlwidgets::saveWidget(m, "mammals-richness.html")
 
 # mutate(h3 = h3_cell_to_parent(h4, 3L))
 
+m <- maplibre(center = c(-110.5, 34.8), zoom = 4) |> add_draw_control()
+richness_map(
+  m,
+  "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j"
+)
 
 
-m <- maplibre(center = c(-110.5, 34.8), zoom = 4) |> add_draw_control() 
-richness_map(m, "https://minio.carlboettiger.info/public-data/inat-tmp-ranges.h3j")
-
-
-
-
-
-
-
-
-
+install.packages(
+  'spDataLarge',
+  repos = 'https://nowosad.github.io/drat/',
+  type = 'source'
+)
 
 
 library(htmlwidgets)
 htmlwidgets::saveWidget(m, "example.html")
 
 
+amphib = open_dataset(
+  "s3://public-inat/polygon/Amphibia.parquet",
+  recursive = FALSE
+)
 
-
-
-
-
-
-
-
-
-
-amphib = open_dataset("s3://public-inat/polygon/Amphibia.parquet", recursive = FALSE)
-
-gdf <- amphib |> 
-filter(name == "Ambystoma californiense") |>
- to_sf(crs=4326)
+gdf <- amphib |>
+  filter(name == "Ambystoma californiense") |>
+  to_sf(crs = 4326)
 
 maplibre(center = c(-122.5, 37.8), zoom = 4) |>
-      add_source(id = "gdf", gdf) |>
-      add_layer("gdf-layer",
-                type = "fill",
-                source = "gdf",
-                paint = list(
-                  "fill-color" =  "darkgreen",
-                  "fill-opacity" = .9
-                )
-        )
-      
-
-
+  add_source(id = "gdf", gdf) |>
+  add_layer(
+    "gdf-layer",
+    type = "fill",
+    source = "gdf",
+    paint = list(
+      "fill-color" = "darkgreen",
+      "fill-opacity" = .9
+    )
+  )
 
 
 # Access SVI
@@ -144,30 +132,29 @@ ca <- tracts |>
   mutate(h4 = tolower(as.character(h4)))
 
 out <- ca |>
- inner_join(inat, by = "h4") |>
- count(STATE, COUNTY, FIPS, h5)
+  inner_join(inat, by = "h4") |>
+  count(STATE, COUNTY, FIPS, h5)
 
 
 #  mutate(height = n / max(n)) |>
 
 url = "https://minio.carlboettiger.info/public-data/cache/inat/cec4b3087f0b6c41ecc384da2521f97c.h3j"
- maplibre() |>
-    add_draw_control() |>
-    add_h3j_source("h3j_source",
-                  url = url
-    ) |>
-    add_fill_extrusion_layer(
-      id = "h3j_layer",
-      source = "h3j_source",
-      tooltip = "n",
-      fill_extrusion_color = viridis_pal("height"),
-      fill_extrusion_height = list(
-        "interpolate",
-        list("linear"),
-        list("zoom"),
-        0,
-        0, 1,
-        list("*", 100000, list("get", "height"))
-      ),
-      fill_extrusion_opacity = 0.7
-    )
+maplibre() |>
+  add_draw_control() |>
+  add_h3j_source("h3j_source", url = url) |>
+  add_fill_extrusion_layer(
+    id = "h3j_layer",
+    source = "h3j_source",
+    tooltip = "n",
+    fill_extrusion_color = viridis_pal("height"),
+    fill_extrusion_height = list(
+      "interpolate",
+      list("linear"),
+      list("zoom"),
+      0,
+      0,
+      1,
+      list("*", 100000, list("get", "height"))
+    ),
+    fill_extrusion_opacity = 0.7
+  )

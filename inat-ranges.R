@@ -23,8 +23,9 @@ taxa <- duckdbfs::open_dataset(
   recursive = FALSE
 )
 
-cache <- tempfile(fileext = ".json")
-
+get_hash <- function(aoi, rank, taxon) {
+  digest::digest(list(aoi, rank, taxon))
+}
 
 # Also requires get_h3_aoi() from utils.R
 richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
@@ -32,12 +33,25 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
     "AWS_PUBLIC_ENDPOINT",
     Sys.getenv("AWS_S3_ENDPOINT")
   )
-  hash <- digest::digest(list(aoi, rank, taxon))
+  hash <- get_hash(aoi, rank, taxon)
   s3 <- paste0("s3://public-data/cache/inat/", hash, ".h3j")
+  url <- gsub("s3://", glue("https://{public_endpoint}/"), s3)
 
   # check if hash exists
+  cache_hit <- tryCatch(
+    {
+      duckdbfs::open_dataset(s3)
+      TRUE
+    },
+    error = function(e) FALSE,
+    finally = FALSE
+  )
 
-  # filter
+  if (cache_hit) {
+    return(url)
+  }
+
+  # Subset by taxon, if requested
   if (!is.null(rank) && !is.null(taxon)) {
     taxa <- open_dataset(
       glue("s3://public-inat/taxonomy/taxa.parquet"),
@@ -50,41 +64,33 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
       inner_join(inat, by = "taxon_id")
   }
 
-  h3_aoi <- get_h3_aoi(aoi, precision = 4) |> select(h3id)
+  inat <- inat |> rename(h3id = h4)
 
-  clock <- bench::bench_time({
-    inat |>
-      rename(h3id = h4) |>
-      inner_join(h3_aoi, by = "h3id") |>
-      distinct(taxon_id, h3id) |>
-      group_by(h3id) |>
-      summarise(n = n()) |>
-      mutate(height = n / max(n)) |>
-      duckdbfs::to_h3j(s3)
-    #  write_dataset("s3://public-data/inat-tmp-ranges.parquet")
-  })
+  # Subset by area, if requested
+  if (nrow(aoi) > 0) {
+    inat <-
+      get_h3_aoi(aoi, precision = 4) |>
+      select(h3id) |>
+      inner_join(inat, by = "h3id")
+  }
 
-  center <- c(st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi)))))
-  bounds <- as.vector(st_bbox(aoi))
+  # Aggregate to h4 hex
+  inat |>
+    distinct(taxon_id, h3id) |>
+    group_by(h3id) |>
+    summarise(n = n()) |>
+    mutate(height = n / max(n)) |>
+    duckdbfs::to_h3j(s3)
 
-  url <- gsub("s3://", glue("https://{public_endpoint}/"), s3)
-
-  meta <- list(
-    X = center[1],
-    Y = center[2],
-    zoom = zoom,
-    url = url,
-    time = clock[[2]],
-    bounds = bounds
-  )
-  return(meta)
+  return(url)
 }
 
-richness_map <- function(meta) {
+richness_map <- function(url, gdf) {
+  bounds <- as.vector(sf::st_bbox(gdf))
   m <-
     maplibre() |>
     add_draw_control() |>
-    add_h3j_source("h3j_source", url = meta$url) |>
+    add_h3j_source("h3j_source", url = url) |>
     add_fill_extrusion_layer(
       id = "h3j_layer",
       source = "h3j_source",
@@ -101,7 +107,7 @@ richness_map <- function(meta) {
       ),
       fill_extrusion_opacity = 0.7
     ) |>
-    fit_bounds(meta$bounds, animate = TRUE)
+    fit_bounds(bounds, animate = TRUE)
 
   return(m)
 }
