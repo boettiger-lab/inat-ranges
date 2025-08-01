@@ -17,21 +17,10 @@ taxa <- open_dataset(
   recursive = FALSE
 )
 
-sci <- duckdbfs::open_dataset(
+taxa <- duckdbfs::open_dataset(
   "s3://public-inat/taxonomy/taxa.parquet",
   recursive = FALSE
 )
-common <- duckdbfs::open_dataset(
-  "s3://public-inat/taxonomy/vernacular/VerqnacularNames-english.csv",
-  format = "csv",
-  recursive = FALSE
-) |>
-  select(id, vernacularName)
-
-taxa <- left_join(sci, common, by = "id") |>
-  rename(taxon_id = id)
-
-common_names <- taxa |> pull(vernacularName)
 
 cache <- tempfile(fileext = ".json")
 
@@ -75,6 +64,8 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
   })
 
   center <- c(st_coordinates(st_centroid(st_as_sfc(st_bbox(aoi)))))
+  bounds <- as.vector(st_bbox(aoi))
+
   url <- gsub("s3://", glue("https://{public_endpoint}/"), s3)
 
   meta <- list(
@@ -82,14 +73,17 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
     Y = center[2],
     zoom = zoom,
     url = url,
-    time = clock[[2]]
+    time = clock[[2]],
+    bounds = bounds
   )
   return(meta)
 }
 
 richness_map <- function(meta) {
+  print(meta)
+
   m <-
-    maplibre(center = c(meta$X, meta$Y), zoom = meta$zoom) |>
+    maplibre() |>
     add_draw_control() |>
     add_h3j_source("h3j_source", url = meta$url) |>
     add_fill_extrusion_layer(
@@ -107,7 +101,8 @@ richness_map <- function(meta) {
         list("*", 100000, list("get", "height"))
       ),
       fill_extrusion_opacity = 0.7
-    )
+    ) |>
+    fit_bounds(meta$bounds, animate = TRUE)
 
   return(m)
 }

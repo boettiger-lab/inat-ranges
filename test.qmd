@@ -1,0 +1,34 @@
+
+```{r}
+library(overture)
+source("utils.R")
+source("inat-ranges.R")
+aoi <- get_division("California")
+
+# gdf <- get_h3_aoi(aoi)
+
+#inat <- duckdbfs::open_dataset("s3://public-inat/hex") 
+
+rank <- "class"
+taxon <- "Aves" 
+
+inat <- duckdbfs::open_dataset("s3://public-inat/taxon") |>  filter(.data[[rank]] == taxon)
+
+duckdbfs::open_dataset("s3://public-inat/taxon") |>  dplyr::filter(scientificName == "Canis lupus") |> duckdbfs::to_sf()
+
+class(gdf)
+overture:::map(gdf)
+
+
+   #   filter(.data[[rank]] == taxon) |>
+   #   select(taxon_id) |>
+
+```
+
+```{r}
+
+
+    inat_range <- inat |> filter(rank == !!taxon)
+
+    print(head(inat_range))
+```

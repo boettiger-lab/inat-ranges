@@ -22,6 +22,7 @@ ui <- page_sidebar(
     textInput("location", "Location", "California"),
     varSelectInput("rank", NULL, taxa, selected = "scientificName"),
     textInput("taxon", NULL, "Canis lupus"),
+    actionButton("button", "Go")
   ),
   card(
     full_screen = TRUE,
@@ -30,40 +31,27 @@ ui <- page_sidebar(
 )
 
 server <- function(input, output, session) {
-  # output$map <- renderMaplibre({overture:::map(gdf)})
-
-  observeEvent(input$taxon, {
-    aoi <- get_division(input$location)
-
-    message("Computing richness...")
-
-    meta <- richness(inat, aoi, input$rank, input$taxon)
-    jsonlite::write_json(meta, cache, auto_unbox = TRUE)
-
-    message(paste("rendering", meta$url))
-
-    # session$reload()
-  }) |>
-    debounce(millis = 600)
-
   output$map <- renderMaplibre({
     if (file.exists(cache)) {
       meta <- jsonlite::read_json(cache)
       print(meta$url)
     } else {
-      meta <- list(
-        X = -110,
-        Y = 37,
-        zoom = 4,
-        url = paste0(
-          "https://",
-          public_endpoint,
-          "/public-data/inat-tmp-ranges.h3j"
-        )
-      )
+      aoi <- get_division(input$location)
+      meta <- richness(inat, aoi, rank = input$rank, taxon = input$taxon)
     }
     m <- richness_map(meta)
     m
+  })
+
+  observeEvent(input$button, {
+    print(input$location)
+    aoi <- get_division(input$location)
+    meta <- richness(inat, aoi, rank = input$rank, taxon = input$taxon)
+
+    jsonlite::write_json(meta, cache, auto_unbox = TRUE)
+    message(paste("rendering", meta$url))
+
+    session$reload()
   })
 }
 
