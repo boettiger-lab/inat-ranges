@@ -32,19 +32,24 @@ ui <- page_sidebar(
 )
 
 server <- function(input, output, session) {
-  output$map <- renderMaplibre({
-    aoi <- get_division(input$location)
-    url <- richness(inat, aoi, rank = input$rank, taxon = input$taxon)
-    m <- richness_map(url, aoi)
-    m
+  # Create reactive expressions that only trigger when button is clicked
+  aoi_reactive <- eventReactive(input$button, {
+    get_division(input$location)
   })
 
-  observeEvent(input$button, {
-    print(input$location)
-    aoi <- get_division(input$location)
+  url_reactive <- eventReactive(input$button, {
+    aoi <- aoi_reactive()
     richness(inat, aoi, rank = input$rank, taxon = input$taxon)
+  })
 
-    session$reload()
+  output$map <- renderMaplibre({
+    # This will only render when button is clicked
+    url <- url_reactive()
+    aoi <- aoi_reactive()
+
+    print(url)
+    m <- richness_map(url, aoi)
+    m
   })
 }
 

@@ -3,8 +3,6 @@ library(duckdbfs)
 library(mapgl)
 library(glue)
 
-fs::dir_create(overture:::overture_cache())
-
 public_endpoint <- Sys.getenv(
   "AWS_PUBLIC_ENDPOINT",
   Sys.getenv("AWS_S3_ENDPOINT")
@@ -13,15 +11,31 @@ public_endpoint <- Sys.getenv(
 
 duckdbfs::duckdb_secrets()
 inat <- open_dataset("s3://public-inat/hex")
+
+common <- open_dataset(
+  "s3://public-inat/taxonomy/vernacular/VernacularNames-english.csv",
+  format = 'csv',
+  recursive = FALSE
+) |>
+  select(id, vernacularName)
 taxa <- open_dataset(
   glue("s3://public-inat/taxonomy/taxa.parquet"),
   recursive = FALSE
-)
+) |>
+  select(
+    "id",
+    "scientificName",
+    "kingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus",
+    "specificEpithet",
+    "infraspecificEpithet"
+  )
 
-taxa <- duckdbfs::open_dataset(
-  "s3://public-inat/taxonomy/taxa.parquet",
-  recursive = FALSE
-)
+taxa <- common |> inner_join(taxa)
 
 get_hash <- function(aoi, rank, taxon) {
   digest::digest(list(aoi, rank, taxon))
@@ -51,12 +65,15 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
     return(url)
   }
 
+  if (rank == "" || rank == "NULL") {
+    rank <- NULL
+  }
+  if (taxon == "" || taxon == "NULL") {
+    taxon <- NULL
+  }
+
   # Subset by taxon, if requested
   if (!is.null(rank) && !is.null(taxon)) {
-    taxa <- open_dataset(
-      glue("s3://public-inat/taxonomy/taxa.parquet"),
-      recursive = FALSE
-    )
     inat <- taxa |>
       rename(taxon_id = id) |>
       filter(.data[[rank]] == taxon) |>
@@ -89,7 +106,8 @@ richness_map <- function(url, gdf) {
   bounds <- as.vector(sf::st_bbox(gdf))
   m <-
     maplibre() |>
-    add_draw_control() |>
+    #    add_draw_control() |>
+    add_geocoder_control() |>
     add_h3j_source("h3j_source", url = url) |>
     add_fill_extrusion_layer(
       id = "h3j_layer",
