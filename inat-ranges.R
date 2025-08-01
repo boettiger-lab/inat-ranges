@@ -81,8 +81,6 @@ richness <- function(inat, aoi, rank = NULL, taxon = NULL, zoom = 3) {
 }
 
 richness_map <- function(meta) {
-  print(meta)
-
   m <-
     maplibre() |>
     add_draw_control() |>

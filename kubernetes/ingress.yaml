@@ -2,9 +2,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
-    kubernetes.io/ingress.class: haproxy
+    haproxy.org/timeout-server: "300s"
+    haproxy.org/timeout-client: "300s"
+    haproxy.org/timeout-connect: "30s"
+    haproxy.org/timeout-http-request: "300s"
   name: inat-ingress
 spec:
+  ingressClassName: haproxy
   rules:
   - host: inat-ranges.nrp-nautilus.io
     http:
